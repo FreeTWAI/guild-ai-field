@@ -4,8 +4,9 @@ import {fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
 
 const actions = ['skills', 'tools', 'work', 'information'];
-const text = (value, maximum) => typeof value === 'string' && value.trim().length > 0 && value.length <= maximum && !/[\u0000-\u001f\u007f]/.test(value);
-const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
+const unprintable = /[\u0000-\u001f\u007f]/;
+const text = (value, maximum) => typeof value === 'string' && value.trim().length > 0 && value.length <= maximum && !unprintable.test(value);
+const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === keys.length && keys.every(key => value[key] !== undefined || Object.hasOwn(value, key));
 export function validateWorkspace(value) {
   if (!exact(value, ['schema_version', 'guild_key', 'name', 'repository', 'headline', 'purpose', 'outcome', 'steps'])
     || value.schema_version !== 'freedom.guild-workspace/v1'
@@ -18,7 +19,8 @@ export function validateWorkspace(value) {
   }
   return value;
 }
-export const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[char]));
+const htmlEntities = {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'};
+export const escapeHtml = value => String(value).replace(/[&<>"']/g, char => htmlEntities[char]);
 const href = (workspace, action) => `https://freetwai.com/#guilds/${workspace.guild_key}/${action}`;
 export function renderWorkspace(workspace) {
   validateWorkspace(workspace);
